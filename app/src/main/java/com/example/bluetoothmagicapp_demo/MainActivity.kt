@@ -106,10 +106,16 @@ class MainActivity : AppCompatActivity() {
 
 
     fun enableBluetooth(){
-        if(bluetoothAdapter.isEnabled){
-            Toast.makeText(this, "Bluetooth e' gia abilitato", Toast.LENGTH_SHORT).show()
-        }else{
+        if(!bluetoothAdapter.isEnabled){
             bluetoothAdapter.enable()
         }
+
+        if(bluetoothAdapter.scanMode != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE){
+            val discoveryIntent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE)
+            discoveryIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION,300)
+            startActivity(discoveryIntent)
+        }
     }
+
+
 }

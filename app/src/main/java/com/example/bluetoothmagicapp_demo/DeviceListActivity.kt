@@ -2,18 +2,33 @@ package com.example.bluetoothmagicapp_demo
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ListView
+import android.widget.ProgressBar
+import android.widget.Toast
+import androidx.core.view.isVisible
 
 class DeviceListActivity : AppCompatActivity() {
-    lateinit var listPairedDevice :ListView //liste
-    lateinit var listAviableDevice :ListView //liste
+    lateinit var progressScanDevices :ProgressBar
 
-    lateinit var adapterPairDevice: ArrayAdapter<String>
-    lateinit var adapterAviableDevice: ArrayAdapter<String>
-    lateinit var bluetoothAdapter: BluetoothAdapter
+    private lateinit var listPairedDevice :ListView //liste
+    private lateinit var listAviableDevice :ListView //liste
+
+    private lateinit var adapterPairDevice: ArrayAdapter<String>
+    private lateinit var adapterAviableDevice: ArrayAdapter<String>
+    private lateinit var bluetoothAdapter: BluetoothAdapter
+
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,6 +41,8 @@ class DeviceListActivity : AppCompatActivity() {
         // inizializzazione
         listPairedDevice = findViewById(R.id.list_paired_device)
         listAviableDevice = findViewById(R.id.list_aviable_device)
+
+        progressScanDevices = findViewById(R.id.progress_scan_devices)
 
         adapterPairDevice = ArrayAdapter(this, R.layout.device_list_item)
         adapterAviableDevice = ArrayAdapter(this, R.layout.device_list_item)
@@ -45,5 +62,72 @@ class DeviceListActivity : AppCompatActivity() {
         }
 
 
+        //qui !!
+
+
+
+        // INTENT FILTER
+        //intent filter to descovery devices
+        //and register
+        var intentFilter_AF = IntentFilter(BluetoothDevice.ACTION_FOUND)
+        registerReceiver(bluetoothDeviceListener,intentFilter_AF)
+        var intentFilter_ADF = IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+        registerReceiver(bluetoothDeviceListener,intentFilter_ADF)
     }
+
+
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_device_list,menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId){
+            R.id.menu_scan_device ->{
+                scanDevices()
+                return true
+            }
+            else->
+            Toast.makeText(this, "scan device clicked", Toast.LENGTH_SHORT).show()
+
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun scanDevices(){
+      // progressScanDevices.visibility(View.VISIBLE)
+        progressScanDevices.isVisible = true
+        adapterAviableDevice.clear()
+
+        Toast.makeText(this,"Scan Started",Toast.LENGTH_SHORT).show()
+        if(bluetoothAdapter.isDiscovering){
+            bluetoothAdapter.cancelDiscovery()
+        }
+        bluetoothAdapter.startDiscovery()
+
+    }
+   private val bluetoothDeviceListener: BroadcastReceiver = object : BroadcastReceiver() {
+
+        override fun onReceive(context: Context?, intent: Intent?) {
+            var action : String? = intent?.action
+
+            if(BluetoothDevice.ACTION_FOUND.equals(action)){ //azione trovato !!!!
+                val device: BluetoothDevice? = intent?.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                if(device?.bondState != BluetoothDevice.BOND_BONDED){
+                    adapterAviableDevice.add(device?.name +"\n" +device?.address)
+
+                }
+            }else if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)){
+                progressScanDevices.isVisible=false
+                if(adapterAviableDevice.count == 0){
+                    Toast.makeText(context, "No new Devices found", Toast.LENGTH_SHORT).show()
+                }else{
+                    Toast.makeText(context, "Click on the device to... ", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+    }
+
 }
