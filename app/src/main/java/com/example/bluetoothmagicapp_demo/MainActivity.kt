@@ -71,16 +71,16 @@ class MainActivity : AppCompatActivity() {
           startActivity(enableBtIntent) // 1 = REQUEST_ENABLE_BTN
       }
 
-/*
+
         if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,  arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),LOCATION_PERMISSION_REQUEST);
         }else{
             val intent = Intent(this, DeviceListActivity::class.java)
             startActivity(intent)
 
-        }*/
+        }
     }
-/*
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         if(requestCode == LOCATION_PERMISSION_REQUEST){
             if(grantResults.size >0  && grantResults[0] == PackageManager.PERMISSION_GRANTED){
@@ -101,7 +101,7 @@ class MainActivity : AppCompatActivity() {
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
-    */
+
 
 
 

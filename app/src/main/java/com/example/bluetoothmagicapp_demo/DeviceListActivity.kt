@@ -70,9 +70,9 @@ class DeviceListActivity : AppCompatActivity() {
         //intent filter to descovery devices
         //and register
         var intentFilter_AF = IntentFilter(BluetoothDevice.ACTION_FOUND)
-        registerReceiver(bluetoothDeviceListener,intentFilter_AF)
+        registerReceiver(mReceiver,intentFilter_AF)
         var intentFilter_ADF = IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
-        registerReceiver(bluetoothDeviceListener,intentFilter_ADF)
+        registerReceiver(mReceiver,intentFilter_ADF)
     }
 
 
@@ -107,6 +107,10 @@ class DeviceListActivity : AppCompatActivity() {
         bluetoothAdapter.startDiscovery()
 
     }
+    //================================================
+    // LISTENER
+    //================================================
+    /*versione 1 : OLD
    private val bluetoothDeviceListener: BroadcastReceiver = object : BroadcastReceiver() {
 
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -128,6 +132,34 @@ class DeviceListActivity : AppCompatActivity() {
             }
         }
 
-    }
+    }*/
+    //versione 2 : NEW
+    private val mReceiver = object : BroadcastReceiver() {
+        override
+        fun onReceive(context: Context, intent: Intent) {
+            val action = intent.action
 
+            // When discovery finds a device
+            if (BluetoothDevice.ACTION_FOUND == action) {
+                // Get the BluetoothDevice object from
+                // the Intent
+                val device =
+                    intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+                // If it's already paired, skip it,
+                // because it's been listed already
+                if (device?.bondState != BluetoothDevice.BOND_BONDED) {
+                    adapterAviableDevice!!.add(device?.name + "\n" + device?.address)
+                }
+                // When discovery is finished, change the
+                // Activity title
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED == action) {
+                setProgressBarIndeterminateVisibility(false)
+                setTitle("Select Device")
+                if (adapterAviableDevice!!.count == 0) {
+                    val noDevices = "No device"
+                    adapterAviableDevice!!.add(noDevices)
+                }
+            }
+        }
+    }
 }
