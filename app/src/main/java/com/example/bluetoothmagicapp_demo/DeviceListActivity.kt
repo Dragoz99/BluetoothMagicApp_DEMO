@@ -11,11 +11,12 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.ArrayAdapter
-import android.widget.ListView
-import android.widget.ProgressBar
-import android.widget.Toast
+import android.widget.*
 import androidx.core.view.isVisible
+import android.widget.TextView
+
+
+
 
 class DeviceListActivity : AppCompatActivity() {
     lateinit var progressScanDevices :ProgressBar
@@ -47,6 +48,18 @@ class DeviceListActivity : AppCompatActivity() {
         adapterPairDevice = ArrayAdapter(this, R.layout.device_list_item)
         adapterAviableDevice = ArrayAdapter(this, R.layout.device_list_item)
 
+
+        //trigger sul click del dispositivo scoperto
+        listAviableDevice.setOnItemClickListener(AdapterView.OnItemClickListener { adapterView, view, i, l ->
+            val info = (view as TextView).text.toString()
+            val address = info.substring(info.length -17)
+
+            var intent = Intent()
+            intent.putExtra("deviceAddress",address)
+            setResult(RESULT_OK, intent)
+            finish()
+
+        })
 
         //setAdapter
         listPairedDevice.setAdapter(adapterPairDevice)

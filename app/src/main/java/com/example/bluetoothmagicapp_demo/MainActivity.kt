@@ -6,8 +6,11 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.session.PlaybackState.STATE_NONE
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Message
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
@@ -16,11 +19,29 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import java.util.jar.Manifest
 
-class MainActivity : AppCompatActivity() {
+open class MainActivity : AppCompatActivity() {
 
     private val REQUEST_ENABLE_BT = 1
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private val LOCATION_PERMISSION_REQUEST = 101
+    private val SELECT_DEVICE = 102
+
+
+
+    private lateinit var comunicationUtility : ComunicationUtility
+
+    companion object {
+        open val MESSAGGE_STATE_CHANGE = 0
+        open val MESSAGGE_READ = 1
+        open val MESSAGGE_WRITE = 2
+        open val MESSAGGE_DEVICE_NAME = 3
+        open val MESSAGGE_TOAST = 4
+        open val TOAST = "toast"
+        open lateinit var DEVICE_NAME : String
+        private lateinit var connectedDevice : String
+    }
+
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,6 +50,8 @@ class MainActivity : AppCompatActivity() {
 
         //inizializza il bluetooth
         initBluetooth()
+        comunicationUtility = ComunicationUtility(this,handler)
+
     }
 
     fun initBluetooth(){
@@ -76,7 +99,7 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this,  arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),LOCATION_PERMISSION_REQUEST);
         }else{
             val intent = Intent(this, DeviceListActivity::class.java)
-            startActivity(intent)
+            startActivityForResult(intent,SELECT_DEVICE)
 
         }
     }
@@ -85,7 +108,7 @@ class MainActivity : AppCompatActivity() {
         if(requestCode == LOCATION_PERMISSION_REQUEST){
             if(grantResults.size >0  && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 var intent = Intent(this,DeviceListActivity::class.java)
-                startActivity(intent)
+                startActivityForResult(intent,SELECT_DEVICE)
             }else{
                 AlertDialog.Builder(this)
                     .setCancelable(false)
@@ -102,9 +125,6 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
-
-
-
     fun enableBluetooth(){
         if(!bluetoothAdapter.isEnabled){
             bluetoothAdapter.enable()
@@ -116,6 +136,69 @@ class MainActivity : AppCompatActivity() {
             startActivity(discoveryIntent)
         }
     }
+
+
+    //server per il click del dispositivo scelto durante il discovery
+    /*quando il dipositivo è stato individuato , se lo clicco avvia questa funzione
+    * */
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if(resultCode ==SELECT_DEVICE && resultCode == RESULT_OK){
+            val address = data?.getStringExtra("deviceAddress")
+            comunicationUtility.connect(bluetoothAdapter.getRemoteDevice(address))
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    private val handler = Handler(object : Handler.Callback {
+        override fun handleMessage(message: Message): Boolean {
+            when(message.what){
+                MESSAGGE_STATE_CHANGE->{
+                    when(message.arg1){
+                        ComunicationUtility.STATE_NONE ->{
+                            setState("Not Connected")
+                        }
+                        ComunicationUtility.STATE_LISTEN ->{
+                            setState("Not Connected")
+                        }
+                        ComunicationUtility.STATE_CONNECTING ->{
+                            setState("Connecting")
+                        }
+                        ComunicationUtility.STATE_CONNECTED ->{
+                            setState("Connected"+ connectedDevice)
+
+                        }
+
+                    }
+                }
+                MESSAGGE_READ -> {
+
+                }
+                MESSAGGE_WRITE -> {
+
+                }
+                MESSAGGE_DEVICE_NAME ->{
+                    connectedDevice = message.data.getString(DEVICE_NAME).toString()
+                    Toast.makeText(this@MainActivity,connectedDevice,Toast.LENGTH_SHORT).show()
+                }
+                MESSAGGE_TOAST -> {
+                    Toast.makeText(this@MainActivity,message.data.getString(TOAST),Toast.LENGTH_SHORT).show()
+                }
+            }
+            return false
+        }
+    })
+
+    private fun setState(subTitle: CharSequence){
+        supportActionBar?.setSubtitle(subTitle)
+    }
+
+     override fun onDestroy(){
+        super.onDestroy()
+        if(comunicationUtility!=null){
+            comunicationUtility.stop()
+        }
+    }
+
 
 
 }
